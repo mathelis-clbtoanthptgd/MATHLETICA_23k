@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="vi" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>River Crossing: The 21-Minute Escape</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&amp;display=swap" rel="stylesheet">
+  <style>
+  * { font-family: 'Montserrat', sans-serif; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+
+  @keyframes glowPulse {
+    0%, 100% { filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 20px #f59e0b); }
+    50% { filter: drop-shadow(0 0 16px #fbbf24) drop-shadow(0 0 35px #f59e0b); }
+  }
+  .torch-glow { animation: glowPulse 1.5s ease-in-out infinite; }
+
+  @keyframes waterFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .water-flow {
+    background: linear-gradient(90deg, #0c4a6e, #0369a1, #0284c7, #0ea5e9, #0284c7, #0369a1, #0c4a6e);
+    background-size: 200% 100%;
+    animation: waterFlow 4s linear infinite;
+  }
+
+  @keyframes boatMove {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(var(--boat-travel)); }
+  }
+  .boat-moving { animation: boatMove 1.2s ease-in-out forwards; }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeSlideUp 0.5s ease-out forwards; }
+  .fade-up-d1 { animation-delay: 0.1s; opacity: 0; }
+  .fade-up-d2 { animation-delay: 0.2s; opacity: 0; }
+  .fade-up-d3 { animation-delay: 0.3s; opacity: 0; }
+  .fade-up-d4 { animation-delay: 0.4s; opacity: 0; }
+
+  @keyframes starBurst {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    50% { transform: scale(1.3) rotate(180deg); opacity: 1; }
+    100% { transform: scale(1) rotate(360deg); opacity: 1; }
+  }
+  .star-burst { animation: starBurst 0.6s ease-out forwards; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .shimmer-text {
+    background: linear-gradient(90deg, #fbbf24, #fff, #fbbf24, #fff, #fbbf24);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  .person-token {
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(.4,0,.2,1);
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .person-token:hover { transform: scale(1.12); }
+  .person-token.selected {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 10px #fbbf24);
+  }
+  .person-token.on-boat { opacity: 0.5; pointer-events: none; }
+
+  .btn-action {
+    min-height: 48px;
+    min-width: 48px;
+    border-radius: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+  .btn-action:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+  .btn-action:active:not(:disabled) { transform: translateY(0); }
+  .btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .bridge-plank {
+    width: 100%;
+    height: 8px;
+    background: repeating-linear-gradient(90deg, #78350f 0px, #78350f 18px, #451a03 18px, #451a03 20px);
+    border-radius: 2px;
+  }
+
+  .speed-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.4);
+    color: #fbbf24;
+  }
+
+  @keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+  }
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    animation: confetti 2s ease-out forwards;
+  }
+
+  .toast-msg {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    padding: 10px 24px; border-radius: 12px;
+    font-weight: 600; font-size: 14px; z-index: 999;
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast-msg.show { opacity: 1; }
+
+  .leaderboard-row {
+    transition: all 0.3s ease;
+  }
+  .leaderboard-row:hover {
+    background: rgba(251,191,36,0.1);
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    .person-token { 
+      flex-basis: calc(25% - 8px); 
+      min-width: 50px;
+    }
+    .speed-badge {
+      font-size: 10px;
+      padding: 1px 4px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .person-token {
+      flex-basis: calc(50% - 6px);
+      min-width: 45px;
+    }
+    .btn-action {
+      min-height: 44px;
+      min-width: 44px;
+      font-size: 14px;
+    }
+  }
+</style>
+  <script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        night: { 900: '#0a0e1a', 800: '#111827', 700: '#1a2035' },
+        amber: { glow: '#fbbf24' }
+      }
+    }
+  }
+}
+</script>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full">
+  <div id="app" class="h-full w-full overflow-auto" style="background: linear-gradient(135deg, #0a0e1a 0%, #111827 40%, #1a1a2e 100%);"><!-- SCREEN 1: LOGIN -->
+   <div id="screen-login" class="h-full w-full flex items-center justify-center p-4">
+    <div class="w-full max-w-md text-center fade-up">
+     <div class="mb-6">
+      <div class="text-6xl mb-4">
+       🛶
+      </div>
+      <h1 id="title-display" class="text-3xl md:text-4xl font-black text-amber-400 leading-tight mb-2" style="text-shadow: 0 0 30px rgba(251,191,36,0.3);">River Crossing</h1>
+      <p id="subtitle-display" class="text-lg text-amber-200/70 font-semibold">The 21-Minute Escape</p>
+     </div>
+     <div class="bg-white/5 backdrop-blur rounded-2xl p-6 border border-white/10 fade-up fade-up-d2"><label for="player-name" class="block text-left text-amber-300/80 text-sm font-semibold mb-2">Nhập tên của bạn</label> <input id="player-name" type="text" maxlength="20" placeholder="Chiến binh vượt sông..." class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/30 text-lg font-semibold focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition-all">
+      <div class="flex gap-3 mt-4"><button id="btn-start" onclick="startGame()" disabled class="btn-action flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-night-900 text-lg transition-all duration-300"> 🚀 Chơi Ngay </button>
+      </div>
+     </div><button onclick="showScreen('screen-leaderboard')" class="mt-4 text-amber-400/60 hover:text-amber-400 text-sm font-semibold transition-colors"> 🏆 Bảng Xếp Hạng </button>
+    </div>
+   </div><!-- SCREEN 2: TUTORIAL OVERLAY -->
+   <div id="screen-tutorial" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.85);">
+    <div class="w-full max-w-lg bg-gradient-to-b from-night-700 to-night-900 rounded-3xl p-6 border border-amber-400/30 shadow-2xl fade-up">
+     <div class="text-center mb-4">
+      <div class="text-4xl mb-2">
+       🔆
+      </div>
+      <h2 class="text-2xl font-black text-amber-400">Hướng Dẫn</h2>
+     </div>
+     <div class="space-y-3 text-white/80 text-sm leading-relaxed">
+      <div class="flex gap-3 items-start bg-white/5 rounded-xl p-3"><span class="text-xl">🎯</span>
+       <p>Giúp <strong class="text-amber-300">4 người</strong> qua cầu trong <strong class="text-amber-300">21 phút</strong>.</p>
+      </div>
+      <div class="flex gap-3 items-start bg-white/5 rounded-xl p-3"><span class="text-xl">👥</span>
+       <p>Mỗi lượt đi tối đa <strong class="text-amber-300">2 người</strong>. Phải mang theo <strong class="text-amber-300">ĐÈN LỒNG</strong>.</p>
+      </div>
+      <div class="flex gap-3 items-start bg-white/5 rounded-xl p-3"><span class="text-xl">⏱️</span>
+       <p>Tốc độ tính theo <strong class="text-amber-300">người chậm nhất</strong> trong lượt.</p>
+      </div>
+      <div class="flex gap-3 items-start bg-white/5 rounded-xl p-3"><span class="text-xl">💡</span>
+       <p><strong class="text-amber-300">Mẹo:</strong> Để tối ưu, hãy để 2 người nhanh nhất giúp đỡ những người chậm!</p>
+      </div>
+      <div class="flex gap-3 items-start bg-white/5 rounded-xl p-3"><span class="text-xl">🏃</span>
+       <div>
+        <p class="font-bold text-amber-300 mb-1">Tốc độ mỗi người:</p>
+        <div class="grid grid-cols-4 gap-2 text-center">
+         <div>
+          <span class="text-lg">🧑‍🦱</span><br><span class="text-amber-400 font-bold">1p</span>
+         </div>
+         <div>
+          <span class="text-lg">👩</span><br><span class="text-amber-400 font-bold">2p</span>
+         </div>
+         <div>
+          <span class="text-lg">👴</span><br><span class="text-amber-400 font-bold">5p</span>
+         </div>
+         <div>
+          <span class="text-lg">👵</span><br><span class="text-amber-400 font-bold">10p</span>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div><button onclick="closeTutorial()" class="btn-action w-full mt-5 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-night-900 text-lg"> ⚡ Sẵn Sàng! </button>
+    </div>
+   </div><!-- SCREEN 3: GAMEPLAY -->
+   <div id="screen-game" class="hidden h-full w-full flex flex-col"><!-- Top Bar -->
+    <header class="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-black/30 border-b border-white/10">
+     <div class="flex items-center gap-2"><span class="text-amber-400 font-bold text-sm" id="player-label"></span>
+     </div>
+     <div class="flex items-center gap-2"><span class="text-2xl">⏱️</span> <span id="timer-display" class="text-2xl font-black text-white tabular-nums">17:00</span>
+     </div>
+     <div class="flex items-center gap-2 text-sm"><span class="text-white/60">Lượt:</span> <span id="move-count" class="text-amber-400 font-bold">0</span>
+     </div>
+    </header><!-- Game Area -->
+    <main class="flex-1 flex flex-col items-center justify-center p-3 gap-3 overflow-auto"><!-- Speed Reference -->
+     <div class="flex gap-3 flex-wrap justify-center">
+      <div class="flex items-center gap-1 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10"><span>🧑‍🦱</span><span class="speed-badge">1p</span>
+      </div>
+      <div class="flex items-center gap-1 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10"><span>👩</span><span class="speed-badge">2p</span>
+      </div>
+      <div class="flex items-center gap-1 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10"><span>👴</span><span class="speed-badge">5p</span>
+      </div>
+      <div class="flex items-center gap-1 bg-white/5 rounded-lg px-3 py-1.5 border border-white/10"><span>👵</span><span class="speed-badge">10p</span>
+      </div>
+     </div><!-- River Scene -->
+     <div class="w-full max-w-2xl flex items-stretch gap-0 rounded-2xl overflow-hidden border border-white/10" style="min-height: 220px;"><!-- Left Bank -->
+      <div id="left-bank" class="flex-1 bg-gradient-to-b from-emerald-900/80 to-emerald-950 flex flex-col items-center justify-center gap-2 p-3 relative min-w-0">
+       <div class="text-xs font-bold text-emerald-300/70 uppercase tracking-wider mb-1">
+        Bờ Trái
+       </div>
+       <div id="left-people" class="flex flex-wrap gap-3 justify-center"></div>
+       <div id="torch-left" class="torch-glow mt-2 text-3xl hidden">
+        🔆
+       </div>
+      </div><!-- Bridge / River -->
+      <div class="w-24 md:w-32 flex flex-col items-center justify-center relative water-flow"><!-- Bridge planks -->
+       <div class="absolute top-4 left-0 right-0 px-1 space-y-2 opacity-40">
+        <div class="bridge-plank"></div>
+        <div class="bridge-plank"></div>
+        <div class="bridge-plank"></div>
+        <div class="bridge-plank"></div>
+        <div class="bridge-plank"></div>
+        <div class="bridge-plank"></div>
+       </div><!-- Boat -->
+       <div id="boat" class="relative z-10 bg-amber-900/90 border-2 border-amber-700 rounded-b-3xl rounded-t-lg px-3 py-2 text-center shadow-lg" style="min-width: 70px;">
+        <div id="boat-people" class="flex gap-1 justify-center min-h-[32px]"></div>
+        <div class="text-xs text-amber-300/60 mt-1 font-semibold">
+         🛶 Thuyền
+        </div>
+       </div><!-- Torch on boat indicator -->
+       <div id="torch-boat" class="hidden text-xl mt-1 torch-glow">
+        🔆
+       </div>
+      </div><!-- Right Bank -->
+      <div id="right-bank" class="flex-1 bg-gradient-to-b from-emerald-900/80 to-emerald-950 flex flex-col items-center justify-center gap-2 p-3 relative min-w-0">
+       <div class="text-xs font-bold text-emerald-300/70 uppercase tracking-wider mb-1">
+        Bờ Phải ⭐
+       </div>
+       <div id="right-people" class="flex flex-wrap gap-3 justify-center"></div>
+       <div id="torch-right" class="torch-glow mt-2 text-3xl hidden">
+        🔆
+       </div>
+      </div>
+     </div><!-- Action Buttons -->
+     <div class="flex gap-3 flex-wrap justify-center"><button id="btn-move" onclick="moveBoat()" disabled class="btn-action px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-base"> <span id="btn-move-text">🛶 Vượt Sông</span> </button> <button onclick="resetGame()" class="btn-action px-5 py-3 bg-white/10 text-white/70 hover:text-white text-sm border border-white/20"> 🔄 Chơi Lại </button>
+     </div><!-- Move Log -->
+     <div id="move-log" class="w-full max-w-2xl bg-black/30 rounded-xl p-3 border border-white/10 max-h-28 overflow-y-auto">
+      <div class="text-xs font-bold text-white/40 uppercase tracking-wider mb-1">
+       Nhật ký di chuyển
+      </div>
+      <div id="log-entries" class="space-y-1 text-xs text-white/60"></div>
+     </div>
+    </main>
+   </div><!-- SCREEN 4: RESULT -->
+   <div id="screen-result" class="hidden h-full w-full flex items-center justify-center p-4">
+    <div class="w-full max-w-md text-center fade-up">
+     <div id="confetti-container" class="fixed inset-0 pointer-events-none z-40"></div>
+     <div id="result-icon" class="text-7xl mb-4"></div>
+     <h2 id="result-title" class="text-3xl font-black mb-2"></h2>
+     <p id="result-subtitle" class="text-white/60 mb-6"></p>
+     <div id="result-stats" class="bg-white/5 rounded-2xl p-5 border border-white/10 space-y-3 mb-6"></div>
+     <div id="result-rank" class="hidden mb-6 bg-amber-400/10 border border-amber-400/30 rounded-xl p-4"><span class="text-amber-400 font-bold text-lg" id="rank-text"></span>
+     </div>
+     <div class="flex gap-3 justify-center"><button onclick="resetGame()" class="btn-action px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-night-900 text-base"> 🔄 Chơi Lại </button> <button onclick="showScreen('screen-leaderboard')" class="btn-action px-6 py-3 bg-white/10 text-white border border-white/20 text-base"> 🏆 Xếp Hạng </button>
+     </div>
+    </div>
+   </div><!-- SCREEN 5: LEADERBOARD -->
+   <div id="screen-leaderboard" class="hidden h-full w-full flex items-center justify-center p-4">
+    <div class="w-full max-w-lg fade-up">
+     <div class="text-center mb-5">
+      <div class="text-5xl mb-2">
+       🏆
+      </div>
+      <h2 class="text-2xl font-black text-amber-400">Bảng Xếp Hạng</h2>
+      <p class="text-white/50 text-sm">Top 10 Cao Thủ Vượt Sông</p>
+     </div>
+     <div class="bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+      <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-white/5 text-xs font-bold text-white/50 uppercase tracking-wider">
+       <div class="col-span-2 text-center">
+        Hạng
+       </div>
+       <div class="col-span-4">
+        Tên
+       </div>
+       <div class="col-span-3 text-center">
+        Thời Gian
+       </div>
+       <div class="col-span-3 text-center">
+        Điểm
+       </div>
+      </div>
+      <div id="leaderboard-list" class="divide-y divide-white/5">
+       <div class="px-4 py-8 text-center text-white/30 text-sm">
+        Chưa có dữ liệu...
+       </div>
+      </div>
+     </div><button onclick="showScreen('screen-login')" class="btn-action w-full mt-4 py-3 bg-white/10 text-white border border-white/20"> ← Quay Về </button>
+    </div>
+   </div><!-- Toast -->
+   <div id="toast" class="toast-msg bg-red-500/90 text-white"></div>
+  </div>
+  <script>
+// ============ GAME STATE ============
+const PEOPLE = [
+  { id: 'p1', emoji: '🧑‍🦱', name: 'Nhanh', time: 1 },
+  { id: 'p2', emoji: '👩', name: 'Khá', time: 2 },
+  { id: 'p3', emoji: '👴', name: 'Chậm', time: 5 },
+  { id: 'p4', emoji: '👵', name: 'Rất chậm', time: 10 },
+];
+
+let state = {
+  playerName: '',
+  timeRemaining: 21,
+  moves: 0,
+  torchSide: 'left', // 'left' or 'right'
+  boatSide: 'left',
+  leftBank: [],
+  rightBank: [],
+  onBoat: [],
+  gameActive: false,
+  moving: false,
+};
+
+let leaderboardData = [];
+
+// ============ ELEMENT SDK ============
+const defaultConfig = {
+  game_title: 'River Crossing',
+  subtitle: 'The 21-Minute Escape',
+  background_color: '#0a0e1a',
+  surface_color: '#1a2035',
+  text_color: '#ffffff',
+  primary_action_color: '#f59e0b',
+  secondary_action_color: '#06b6d4',
+};
+
+function applyConfig(config) {
+  const c = { ...defaultConfig, ...config };
+
+  document.getElementById('title-display').textContent = c.game_title;
+  document.getElementById('subtitle-display').textContent = c.subtitle;
+
+  const app = document.getElementById('app');
+  app.style.background = `linear-gradient(135deg, ${c.background_color} 0%, ${c.surface_color} 100%)`;
+
+  document.querySelectorAll('h1, h2').forEach(el => {
+    if (el.id === 'title-display' || el.id === 'result-title') {
+      el.style.color = c.primary_action_color;
+    }
+  });
+
+  const font = c.font_family || 'Montserrat';
+  document.body.style.fontFamily = `${font}, sans-serif`;
+
+  if (c.font_size) {
+    const base = c.font_size;
+    document.querySelectorAll('p, span, div, button, label').forEach(el => {
+      // scale relative to defaults
+    });
+  }
+}
+
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => { applyConfig(config); },
+  mapToCapabilities: (config) => ({
+    recolorables: [
+      { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+      { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+      { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+      { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (v) => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
+      { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } },
+    ],
+    borderables: [],
+    fontEditable: {
+      get: () => config.font_family || defaultConfig.font_family || 'Montserrat',
+      set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+    },
+    fontSizeable: undefined,
+  }),
+  mapToEditPanelValues: (config) => new Map([
+    ['game_title', config.game_title || defaultConfig.game_title],
+    ['subtitle', config.subtitle || defaultConfig.subtitle],
+  ])
+});
+
+// ============ DATA SDK ============
+const dataHandler = {
+  onDataChanged(data) {
+    leaderboardData = data.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+    renderLeaderboard();
+  }
+};
+
+(async () => {
+  const res = await window.dataSdk.init(dataHandler);
+  if (!res.isOk) console.error('Data SDK init failed');
+})();
+
+// ============ SCREENS ============
+function showScreen(id) {
+  ['screen-login', 'screen-game', 'screen-result', 'screen-leaderboard'].forEach(s => {
+    document.getElementById(s).classList.add('hidden');
+  });
+  document.getElementById(id).classList.remove('hidden');
+  if (id === 'screen-leaderboard') renderLeaderboard();
+}
+
+// ============ LOGIN ============
+const nameInput = document.getElementById('player-name');
+const btnStart = document.getElementById('btn-start');
+
+function updateStartButtonState() {
+  btnStart.disabled = nameInput.value.trim().length === 0;
+}
+
+nameInput.addEventListener('input', updateStartButtonState);
+nameInput.addEventListener('change', updateStartButtonState);
+nameInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && nameInput.value.trim() && !btnStart.disabled) {
+    e.preventDefault();
+    startGame();
+  }
+});
+
+// Initial state
+updateStartButtonState();
+
+function startGame() {
+  state.playerName = nameInput.value.trim();
+  if (!state.playerName) return;
+  
+  // Check if player name already exists
+  const nameExists = leaderboardData.some(entry => entry.player_name === state.playerName);
+  if (nameExists) {
+    showToast('Tên này đã chơi rồi! Vui lòng dùng tên khác.');
+    return;
+  }
+  
+  resetGameState();
+  showScreen('screen-game');
+  document.getElementById('screen-tutorial').classList.remove('hidden');
+  setTimeout(() => {
+    state.gameActive = false; // Ensure tutorial must be closed first
+  }, 100);
+}
+
+function closeTutorial() {
+  document.getElementById('screen-tutorial').classList.add('hidden');
+  state.gameActive = true;
+}
+
+// ============ GAME LOGIC ============
+function resetGameState() {
+  state.timeRemaining = 21;
+  state.moves = 0;
+  state.torchSide = 'left';
+  state.boatSide = 'left';
+  state.leftBank = PEOPLE.map(p => ({ ...p }));
+  state.rightBank = [];
+  state.onBoat = [];
+  state.gameActive = false;
+  state.moving = false;
+  document.getElementById('log-entries').innerHTML = '';
+  renderGame();
+}
+
+function resetGame() {
+  resetGameState();
+  showScreen('screen-game');
+  state.gameActive = true;
+}
+
+function renderGame() {
+  // Timer
+  const mins = Math.floor(state.timeRemaining);
+  const secs = Math.round((state.timeRemaining - mins) * 60);
+  document.getElementById('timer-display').textContent =
+    `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  document.getElementById('timer-display').className =
+    `text-2xl font-black tabular-nums ${state.timeRemaining <= 3 ? 'text-red-400' : state.timeRemaining <= 7 ? 'text-amber-400' : 'text-white'}`;
+
+  // Moves
+  document.getElementById('move-count').textContent = state.moves;
+  document.getElementById('player-label').textContent = `🎮 ${state.playerName}`;
+
+  // People on banks
+  renderBank('left-people', state.leftBank);
+  renderBank('right-people', state.rightBank);
+
+  // Boat
+  const boatEl = document.getElementById('boat-people');
+  boatEl.innerHTML = '';
+  state.onBoat.forEach(p => {
+    const span = document.createElement('span');
+    span.className = 'text-2xl';
+    span.textContent = p.emoji;
+    boatEl.appendChild(span);
+  });
+
+  // Torch
+  document.getElementById('torch-left').classList.toggle('hidden', state.torchSide !== 'left' || state.onBoat.length > 0);
+  document.getElementById('torch-right').classList.toggle('hidden', state.torchSide !== 'right' || state.onBoat.length > 0);
+  document.getElementById('torch-boat').classList.toggle('hidden', state.onBoat.length === 0);
+
+  // Move button
+  const canMove = state.onBoat.length > 0 && state.torchSide === state.boatSide && state.gameActive && !state.moving;
+  document.getElementById('btn-move').disabled = !canMove;
+
+  const goingRight = state.boatSide === 'left';
+  document.getElementById('btn-move-text').textContent = goingRight ? '🛶 Vượt Sông →' : '← 🛶 Quay Về';
+}
+
+function renderBank(containerId, people) {
+  const container = document.getElementById(containerId);
+  const existingMap = new Map([...container.children].map(el => [el.dataset.pid, el]));
+
+  const currentIds = new Set(people.map(p => p.id));
+  const boatIds = new Set(state.onBoat.map(p => p.id));
+
+  // Remove people no longer on this bank
+  existingMap.forEach((el, id) => {
+    if (!currentIds.has(id)) el.remove();
+  });
+
+  people.forEach(p => {
+    let el = existingMap.get(p.id);
+    const isOnBoat = boatIds.has(p.id);
+    if (!el) {
+      el = document.createElement('div');
+      el.dataset.pid = p.id;
+      el.className = `person-token flex flex-col items-center gap-0.5 ${isOnBoat ? 'on-boat' : ''}`;
+      el.innerHTML = `<span class="text-3xl md:text-4xl">${p.emoji}</span><span class="speed-badge">${p.time}p</span>`;
+      el.addEventListener('click', () => togglePerson(p.id));
+      container.appendChild(el);
+    }
+    el.classList.toggle('on-boat', isOnBoat);
+    el.classList.toggle('selected', false);
+  });
+}
+
+function togglePerson(id) {
+  if (!state.gameActive || state.moving) return;
+
+  const currentBank = state.boatSide === 'left' ? state.leftBank : state.rightBank;
+  const onBoatIdx = state.onBoat.findIndex(p => p.id === id);
+
+  if (onBoatIdx !== -1) {
+    // Remove from boat, back to current bank
+    const person = state.onBoat.splice(onBoatIdx, 1)[0];
+    currentBank.push(person);
+    renderGame();
+    return;
+  }
+
+  if (state.onBoat.length >= 2) {
+    showToast('Thuyền chỉ chở tối đa 2 người!');
+    return;
+  }
+
+  const bankIdx = currentBank.findIndex(p => p.id === id);
+  if (bankIdx === -1) return;
+
+  const person = currentBank.splice(bankIdx, 1)[0];
+  state.onBoat.push(person);
+  renderGame();
+}
+
+function moveBoat() {
+  if (!state.gameActive || state.moving || state.onBoat.length === 0) return;
+  if (state.torchSide !== state.boatSide) {
+    showToast('Đèn pin không ở cùng bờ với thuyền!');
+    return;
+  }
+
+  state.moving = true;
+  const travelTime = Math.max(...state.onBoat.map(p => p.time));
+
+  if (state.timeRemaining - travelTime < 0) {
+    endGame(false);
+    return;
+  }
+
+  state.timeRemaining -= travelTime;
+  state.moves++;
+
+  const goingRight = state.boatSide === 'left';
+  const destBank = goingRight ? state.rightBank : state.leftBank;
+  const names = state.onBoat.map(p => `${p.emoji}${p.name}`).join(' & ');
+  const direction = goingRight ? '→ Bờ Phải' : '← Bờ Trái';
+
+  addLog(`Lượt ${state.moves}: ${names} ${direction} (${travelTime}p)`);
+
+  // Animate boat
+  const boat = document.getElementById('boat');
+  boat.style.setProperty('--boat-travel', goingRight ? '20px' : '-20px');
+  boat.classList.add('boat-moving');
+
+  setTimeout(() => {
+    boat.classList.remove('boat-moving');
+
+    // Transfer people
+    state.onBoat.forEach(p => destBank.push(p));
+    state.onBoat = [];
+    state.boatSide = goingRight ? 'right' : 'left';
+    state.torchSide = state.boatSide;
+    state.moving = false;
+
+    renderGame();
+
+    // Check win
+    if (state.rightBank.length === 4) {
+      endGame(true);
+    } else if (state.timeRemaining <= 0) {
+      endGame(false);
+    }
+  }, 600);
+
+  renderGame();
+}
+
+function addLog(text) {
+  const container = document.getElementById('log-entries');
+  const div = document.createElement('div');
+  div.className = 'py-1 border-b border-white/5 last:border-0';
+  div.textContent = text;
+  container.appendChild(div);
+  container.parentElement.scrollTop = container.parentElement.scrollHeight;
+}
+
+// ============ END GAME ============
+async function endGame(won) {
+  state.gameActive = false;
+  let score = 0;
+
+  if (won) {
+    score = 1000 + Math.round(state.timeRemaining * 50) + Math.max(0, 100 - state.moves * 5);
+  }
+
+  showScreen('screen-result');
+  const icon = document.getElementById('result-icon');
+  const title = document.getElementById('result-title');
+  const subtitle = document.getElementById('result-subtitle');
+  const stats = document.getElementById('result-stats');
+
+  if (won) {
+    icon.textContent = '🎉';
+    icon.className = 'text-7xl mb-4 star-burst';
+    title.textContent = 'Chiến Thắng!';
+    title.className = 'text-3xl font-black mb-2 shimmer-text';
+    subtitle.textContent = `${state.playerName}, bạn đã vượt sông thành công!`;
+    spawnConfetti();
+  } else {
+    icon.textContent = '💀';
+    icon.className = 'text-7xl mb-4';
+    title.textContent = 'Thất Bại!';
+    title.className = 'text-3xl font-black mb-2 text-red-400';
+    subtitle.textContent = 'Hết thời gian! Thử lại nhé.';
+  }
+
+  const minsLeft = Math.floor(state.timeRemaining);
+  const secsLeft = Math.round((state.timeRemaining - minsLeft) * 60);
+  const timeStr = `${minsLeft}p ${secsLeft}s`;
+
+  stats.innerHTML = `
+    <div class="flex justify-between text-white/70"><span>Thời gian còn lại</span><span class="font-bold text-amber-400">${timeStr}</span></div>
+    <div class="flex justify-between text-white/70"><span>Số lượt đi</span><span class="font-bold text-cyan-400">${state.moves}</span></div>
+    <div class="flex justify-between text-white/70"><span>Điểm cơ bản</span><span class="font-bold">${won ? '1,000' : '0'}</span></div>
+    ${won ? `<div class="flex justify-between text-white/70"><span>Bonus tốc độ</span><span class="font-bold text-green-400">+${Math.round(state.timeRemaining * 50)}</span></div>` : ''}
+    ${won ? `<div class="flex justify-between text-white/70"><span>Bonus tối ưu</span><span class="font-bold text-purple-400">+${Math.max(0, 100 - state.moves * 5)}</span></div>` : ''}
+    <div class="flex justify-between text-lg border-t border-white/10 pt-2"><span class="font-bold text-white">Tổng điểm</span><span class="font-black text-amber-400 text-xl">${score.toLocaleString()}</span></div>
+  `;
+
+  // Save to leaderboard
+  if (won && score > 0) {
+    if (leaderboardData.length >= 999) {
+      showToast('Bảng xếp hạng đã đầy!');
+    } else {
+      const saveBtn = document.getElementById('btn-move');
+      const result = await window.dataSdk.create({
+        player_name: state.playerName,
+        score: score,
+        time_remaining: state.timeRemaining,
+        moves_count: state.moves,
+        completed_at: new Date().toISOString()
+      });
+      if (result.isOk) {
+        // Find rank
+        setTimeout(() => {
+          const rank = leaderboardData.findIndex(d => d.player_name === state.playerName && d.score === score);
+          if (rank !== -1 && rank < 10) {
+            const rankEl = document.getElementById('result-rank');
+            rankEl.classList.remove('hidden');
+            document.getElementById('rank-text').textContent = `🏅 Bạn xếp hạng #${rank + 1} trên Bảng Xếp Hạng!`;
+          }
+        }, 500);
+      }
+    }
+  }
+}
+
+function spawnConfetti() {
+  const container = document.getElementById('confetti-container');
+  container.innerHTML = '';
+  const colors = ['#fbbf24', '#f43f5e', '#3b82f6', '#10b981', '#a855f7', '#f97316'];
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.top = '-10px';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDelay = Math.random() * 0.8 + 's';
+    piece.style.animationDuration = (1.5 + Math.random()) + 's';
+    container.appendChild(piece);
+  }
+  setTimeout(() => container.innerHTML = '', 3000);
+}
+
+// ============ LEADERBOARD ============
+function renderLeaderboard() {
+  const list = document.getElementById('leaderboard-list');
+  const top10 = leaderboardData.slice(0, 10);
+
+  if (top10.length === 0) {
+    list.innerHTML = '<div class="px-4 py-8 text-center text-white/30 text-sm">Chưa có dữ liệu...</div>';
+    return;
+  }
+
+  const existingMap = new Map([...list.children].map(el => [el.dataset.rid, el]));
+  const currentIds = new Set();
+
+  top10.forEach((entry, i) => {
+    const rid = entry.__backendId;
+    currentIds.add(rid);
+    
+    // Calculate rank: same score = same rank, skip numbers for ties
+    let actualRank = i + 1;
+    if (i > 0 && top10[i].score === top10[i - 1].score) {
+      actualRank = leaderboardData.findIndex(d => d.__backendId === top10[i - 1].__backendId) + 1;
+    }
+    
+    const rankIcons = ['🥇', '🥈', '🥉'];
+    const rankDisplay = actualRank <= 3 ? rankIcons[actualRank - 1] : `#${actualRank}`;
+    const minsLeft = Math.floor(entry.time_remaining || 0);
+    const secsLeft = Math.round(((entry.time_remaining || 0) - minsLeft) * 60);
+
+    let el = existingMap.get(rid);
+    if (!el) {
+      el = document.createElement('div');
+      el.dataset.rid = rid;
+      el.className = 'leaderboard-row grid grid-cols-12 gap-2 px-4 py-3 items-center';
+      list.appendChild(el);
+    }
+    el.innerHTML = `
+      <div class="col-span-2 text-center font-bold text-lg">${rankDisplay}</div>
+      <div class="col-span-4 font-semibold text-white truncate">${entry.player_name || '???'}</div>
+      <div class="col-span-3 text-center text-emerald-400 font-mono text-sm">${minsLeft}p ${secsLeft}s</div>
+      <div class="col-span-3 text-center text-amber-400 font-bold">${(entry.score || 0).toLocaleString()}</div>
+    `;
+  });
+
+  existingMap.forEach((el, rid) => {
+    if (!currentIds.has(rid)) el.remove();
+  });
+}
+
+// ============ TOAST ============
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// Init
+lucide.createIcons();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9dc218f4213ac7ca',t:'MTc3MzQ3ODkyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
